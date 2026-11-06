@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.1.9)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -13,24 +19,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
       - name: Verify tag matches manifest
         env:
-          TAG_NAME: ${{ github.ref_name }}
-        run: node -e 'const v=require("./manifest.json").version; if(process.env.TAG_NAME!=="v"+v){throw new Error("Tag must match manifest version: v"+v)}'
+          TAG_NAME: ${{ inputs.tag || github.ref_name }}
+        run: |
+          node -e 'const v=require("./manifest.json").version; if(process.env.TAG_NAME!=="v"+v){throw new Error("Tag must match manifest version: v"+v)}'
       - run: npm ci
       - run: npm test
       - run: npm run build
       - name: Package extension
         env:
-          TAG_NAME: ${{ github.ref_name }}
+          TAG_NAME: ${{ inputs.tag || github.ref_name }}
         run: |
           zip "groupware-alarm-${TAG_NAME}.zip" manifest.json background.js core.js parser.bundle.js popup.html popup.js popup.css icon.png README.md LICENSE-parse5.txt LICENSE-entities.txt
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: ${{ github.ref_name }}
+          TAG_NAME: ${{ inputs.tag || github.ref_name }}
         run: gh release create "$TAG_NAME" "groupware-alarm-${TAG_NAME}.zip" --generate-notes --verify-tag
