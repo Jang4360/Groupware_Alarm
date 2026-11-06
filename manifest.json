@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "인젠트 메일 알림",
+  "version": "0.1.9",
+  "description": "그룹웨어 새 메일과 로그인 만료를 알려줍니다.",
+  "minimum_chrome_version": "116",
+  "permissions": ["alarms", "notifications", "storage"],
+  "host_permissions": ["https://ep.inzent.com/*", "https://filemail31.zioyou.kr/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "인젠트 메일 알림" },
+  "icons": { "128": "icon.png" }
+}
