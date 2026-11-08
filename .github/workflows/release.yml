@@ -37,7 +37,7 @@ jobs:
         env:
           TAG_NAME: ${{ inputs.tag || github.ref_name }}
         run: |
-          zip "groupware-alarm-${TAG_NAME}.zip" manifest.json background.js core.js parser.bundle.js popup.html popup.js popup.css icon.png README.md LICENSE-parse5.txt LICENSE-entities.txt docs/images/*.png
+          zip "groupware-alarm-${TAG_NAME}.zip" manifest.json background.js core.js groupware-loaded.js parser.bundle.js popup.html popup.js popup.css icon.png README.md LICENSE-parse5.txt LICENSE-entities.txt docs/images/*.png
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}

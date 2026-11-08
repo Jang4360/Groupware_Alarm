@@ -8,6 +8,8 @@ const SYNC_API = 'https://filemail31.zioyou.kr:443/Src/EaGetMail_PopList_Merak_A
 const ALARM = 'check-inbox';
 let running;
 let queue = Promise.resolve();
+let navigationCheckPending;
+let navigationCheckRequested = false;
 
 function enqueue(work) {
   const task = queue.then(work);
@@ -100,6 +102,20 @@ function checkOnce() {
   return running;
 }
 
+function checkAfterGroupwareLoad() {
+  navigationCheckRequested = true;
+  if (!navigationCheckPending) {
+    navigationCheckPending = enqueue(async () => {
+      do {
+        navigationCheckRequested = false;
+        const { status } = await chrome.storage.local.get('status');
+        if (status === 'login' || status === 'error') await check();
+      } while (navigationCheckRequested);
+    }).finally(() => { navigationCheckPending = null; });
+  }
+  return navigationCheckPending;
+}
+
 async function setup() {
   await chrome.alarms.create(ALARM, { periodInMinutes: 1 });
   await checkOnce();
@@ -113,10 +129,16 @@ chrome.notifications.onClicked.addListener((id) => {
     void chrome.notifications.clear(id);
   }
 });
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.target !== 'background') return;
   let task;
   if (message.type === 'check') task = checkOnce();
+  else if (message.type === 'groupware-loaded') {
+    let url;
+    try { url = new URL(sender.url); } catch { return; }
+    if (url.origin !== 'https://ep.inzent.com:1204') return;
+    task = checkAfterGroupwareLoad();
+  }
   else if (message.type === 'popup-open') task = enqueue(async () => {
     await chrome.storage.local.set({ pendingCount: 0 });
     await refreshBadge();
