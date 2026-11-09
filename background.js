@@ -1,5 +1,5 @@
-import { compareInbox, DEFAULT_FILTERS, mailNotification, updateHistory, formatListDate, badgeAppearance } from './core.js';
-import { parseInbox, parseSyncParameters } from './parser.bundle.js';
+import { compareInbox, compareBoard, DEFAULT_FILTERS, BOARD_URL, boardPostUrl, mailNotification, todayMail, todayBoard, seoulToday, badgeAppearance } from './core.js';
+import { parseInbox, parseNoticeBoard, parseSyncParameters } from './parser.bundle.js';
 
 const INBOX = 'https://ep.inzent.com:1204/email/DocList?FolderCode=-1';
 const HOME = 'https://ep.inzent.com:1204/';
@@ -46,7 +46,7 @@ async function accountHash(account) {
 }
 
 async function check() {
-  const state = await chrome.storage.local.get(['seenIds', 'trackedIds', 'accountHash', 'filters', 'loginNotified', 'history']);
+  const state = await chrome.storage.local.get(['seenIds', 'trackedIds', 'accountHash', 'filters', 'loginNotified', 'boardSeenIds']);
   try {
     const syncPage = await fetch(SYNC_PAGE, { credentials: 'include', cache: 'no-store', signal: AbortSignal.timeout(20000) });
     if (syncPage.status === 401) return await loginRequired(state);
@@ -67,25 +67,48 @@ async function check() {
     if (result?.type !== 'ok') throw new Error('format');
     const hash = await accountHash(result.account);
     const switched = Boolean(hash && state.accountHash && hash !== state.accountHash);
-    const history = switched ? [] : updateHistory((state.history || []).map((item) => {
-      const match = result.messages.find((message) => message.id === item.id);
-      return !item.mailDate && match ? { ...item, mailDate: formatListDate(match.dateText) } : item;
-    }), []);
-    const { fresh, ids, uncertain, trackedIds } = compareInbox(switched ? undefined : state.seenIds, result.messages, state.filters || DEFAULT_FILTERS, switched ? [] : (state.trackedIds || state.seenIds || []));
+    const filters = state.filters || DEFAULT_FILTERS;
+    const history = todayMail(result.messages, filters);
+    const { fresh, ids, uncertain, trackedIds } = compareInbox(switched ? undefined : state.seenIds, result.messages, filters, switched ? [] : (state.trackedIds || state.seenIds || []));
     // Save before notification so overlapping triggers and worker restarts do not repeat it.
     await setStatus(uncertain ? 'uncertain' : 'ok', {
       seenIds: ids, trackedIds, accountHash: hash || state.accountHash || '', loginNotified: false,
-      history, ...(switched ? { pendingCount: 0 } : {})
+      history, ...(switched ? { pendingCount: 0, boardSeenIds: null, boardHistory: [] } : {})
     });
     if (fresh.length) {
       await notifyMail(fresh);
       const { pendingCount } = await chrome.storage.local.get('pendingCount');
       const count = Number.isSafeInteger(pendingCount) && pendingCount > 0 ? pendingCount : 0;
-      await chrome.storage.local.set({ history: updateHistory(history, fresh), pendingCount: Math.min(count + fresh.length, 1000000) });
+      await chrome.storage.local.set({ pendingCount: Math.min(count + fresh.length, 1000000) });
       await refreshBadge();
     }
+    await checkBoard(switched ? undefined : state.boardSeenIds);
   } catch (error) {
     await setStatus('error', { errorKind: error?.message === 'format' ? 'format' : 'network' });
+  }
+}
+
+async function checkBoard(previous) {
+  try {
+    const response = await fetch(BOARD_URL, { credentials: 'include', cache: 'no-store', signal: AbortSignal.timeout(20000) });
+    if (!response.ok) throw new Error('http');
+    const result = parseNoticeBoard(await response.text(), response.url);
+    if (result.type !== 'ok') throw new Error('format');
+    const today = todayBoard(result.items);
+    const { fresh, trackedIds } = compareBoard(previous, result.items);
+    const newToday = fresh.filter((item) => item.date === seoulToday());
+    await chrome.storage.local.set({ boardHistory: today, boardSeenIds: trackedIds, boardStatus: 'ok' });
+    for (const item of [...newToday].reverse()) {
+      await notify(`new-board:${item.id}`, '새 전사공지가 등록되었습니다', item.subject);
+    }
+    if (newToday.length) {
+      const { pendingCount } = await chrome.storage.local.get('pendingCount');
+      const count = Number.isSafeInteger(pendingCount) && pendingCount > 0 ? pendingCount : 0;
+      await chrome.storage.local.set({ pendingCount: Math.min(count + newToday.length, 1000000) });
+      await refreshBadge();
+    }
+  } catch {
+    await chrome.storage.local.set({ boardStatus: 'error' });
   }
 }
 
@@ -123,9 +146,15 @@ async function setup() {
 chrome.runtime.onInstalled.addListener(() => { void setup(); });
 chrome.runtime.onStartup.addListener(() => { void setup(); });
 chrome.alarms.onAlarm.addListener((alarm) => { if (alarm.name === ALARM) void checkOnce(); });
-chrome.notifications.onClicked.addListener((id) => {
-  if (id === 'new-mail' || id.startsWith('new-mail:') || id === 'login-required') {
-    void chrome.tabs.create({ url: id === 'login-required' ? HOME : INBOX });
+chrome.notifications.onClicked.addListener(async (id) => {
+  if (id === 'new-mail' || id.startsWith('new-mail:') || id === 'login-required' || /^new-board:\d+$/.test(id)) {
+    let url = id === 'login-required' ? HOME : INBOX;
+    if (/^new-board:\d+$/.test(id)) {
+      const { boardHistory = [] } = await chrome.storage.local.get('boardHistory');
+      const item = boardHistory.find((entry) => entry.id === id.slice(10));
+      url = item ? boardPostUrl(item) : BOARD_URL;
+    }
+    void chrome.tabs.create({ url });
     void chrome.notifications.clear(id);
   }
 });

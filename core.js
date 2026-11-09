@@ -1,4 +1,15 @@
 export const DEFAULT_FILTERS = ['인젠트 뉴스브리핑'];
+export const BOARD_URL = 'https://ep.inzent.com:1204/bbs/bbslist?AddBbs=0&csrf=eyJ0b2tlbiI6IiIsIlJvb21ObyI6IjQ1In0%3D';
+
+export function boardPostUrl(item) {
+  if (!/^\d+$/.test(item.id || '')) return BOARD_URL;
+  const csrf = item.csrf && /^[A-Za-z0-9+/=_-]{1,2048}$/.test(item.csrf)
+    ? item.csrf : btoa(JSON.stringify({ token: '', RoomNo: '45', DocNo: item.id }));
+  const url = new URL('https://ep.inzent.com:1204/bbs/BbsView');
+  url.searchParams.set('AddBbs', '0');
+  url.searchParams.set('csrf', csrf);
+  return url.href;
+}
 
 export function badgeAppearance(status, count) {
   const number = Number.isSafeInteger(count) && count > 0 ? count : 0;
@@ -8,6 +19,35 @@ export function badgeAppearance(status, count) {
 
 export function normalizeName(name) {
   return name.normalize('NFKC').replace(/\s+/g, ' ').trim().toLocaleLowerCase('ko');
+}
+
+export function seoulToday(now = Date.now()) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(now)).map(({ type, value }) => [type, value]));
+  return `${parts.year}/${parts.month}/${parts.day}`;
+}
+
+export function todayMail(messages, filters, now = Date.now()) {
+  const excluded = new Set(filters.map(normalizeName).filter(Boolean));
+  return messages
+    .filter((item) => !excluded.has(normalizeName(item.sender)))
+    .map(({ id, sender, subject, csrf, dateText }) => ({ id, sender, subject, csrf, mailDate: formatListDate(dateText, now) }))
+    .filter((item) => item.mailDate?.date === seoulToday(now))
+    .sort((a, b) => b.mailDate.time.localeCompare(a.mailDate.time))
+    .slice(0, 5);
+}
+
+export function todayBoard(items, now = Date.now()) {
+  const today = seoulToday(now);
+  return items.filter((item) => item.date === today).sort((a, b) => (b.time || '').localeCompare(a.time || '')).slice(0, 5);
+}
+
+export function compareBoard(previous, items) {
+  const ids = items.map((item) => item.id);
+  const known = new Set(previous || []);
+  return {
+    fresh: Array.isArray(previous) ? items.filter((item) => !known.has(item.id)) : [],
+    trackedIds: [...new Set([...ids, ...(previous || [])])].slice(0, 100),
+  };
 }
 
 export function mailNotification(messages) {

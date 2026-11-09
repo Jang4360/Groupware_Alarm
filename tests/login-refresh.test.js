@@ -39,7 +39,7 @@ test('로그인 화면 이동 직후 확인하고, 진행 중인 만료 확인�
   await checking;
   await navigating;
   assert.equal(data.status, 'ok');
-  assert.equal(fetches, 4);
+  assert.equal(fetches, 5);
   await send('groupware-loaded', { url: 'https://ep.inzent.com:1204/email/DocList' });
-  assert.equal(fetches, 4, '정상 연결 중에는 매 화면 이동마다 메일을 다시 조회하지 않는다');
+  assert.equal(fetches, 5, '정상 연결 중에는 매 화면 이동마다 메일을 다시 조회하지 않는다');
 });
