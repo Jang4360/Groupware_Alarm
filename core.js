@@ -1,4 +1,5 @@
 export const DEFAULT_FILTERS = ['인젠트 뉴스브리핑'];
+const HISTORY_LIMIT = 10;
 export const BOARD_URL = 'https://ep.inzent.com:1204/bbs/bbslist?AddBbs=0&csrf=eyJ0b2tlbiI6IiIsIlJvb21ObyI6IjQ1In0%3D';
 
 export function boardPostUrl(item) {
@@ -33,12 +34,12 @@ export function todayMail(messages, filters, now = Date.now()) {
     .map(({ id, sender, subject, csrf, dateText }) => ({ id, sender, subject, csrf, mailDate: formatListDate(dateText, now) }))
     .filter((item) => item.mailDate?.date === seoulToday(now))
     .sort((a, b) => b.mailDate.time.localeCompare(a.mailDate.time))
-    .slice(0, 5);
+    .slice(0, HISTORY_LIMIT);
 }
 
 export function todayBoard(items, now = Date.now()) {
   const today = seoulToday(now);
-  return items.filter((item) => item.date === today).sort((a, b) => (b.time || '').localeCompare(a.time || '')).slice(0, 5);
+  return items.filter((item) => item.date === today).sort((a, b) => (b.time || '').localeCompare(a.time || '')).slice(0, HISTORY_LIMIT);
 }
 
 export function compareBoard(previous, items) {
@@ -97,7 +98,7 @@ export function updateHistory(previous, messages, now = Date.now()) {
   };
   return [...entries, ...(previous || []).filter((item) => !ids.has(item.id))]
     .sort((a, b) => dateKey(b).localeCompare(dateKey(a)))
-    .slice(0, 5);
+    .slice(0, HISTORY_LIMIT);
 }
 
 export function compareInbox(previous, messages, filters, tracked = previous || []) {

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "인젠트 메일 알림",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "그룹웨어 새 메일과 전사공지, 로그인 만료를 알려줍니다.",
   "minimum_chrome_version": "116",
   "permissions": ["alarms", "notifications", "storage"],
