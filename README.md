@@ -1,6 +1,6 @@
 # 인젠트 그룹웨어 메일 알림
 
-크롬에서 그룹웨어 새 메일을 약 1분마다 확인하고 Windows 알림과 확장프로그램 배지로 알려주는 확장프로그램이다. 현재 버전은 **0.1.10**이다.
+크롬에서 그룹웨어 새 메일을 약 1분마다 확인하고 Windows 알림과 확장프로그램 배지로 알려주는 확장프로그램이다. 현재 버전은 **0.1.11**이다.
 
 ## 처음 설치하기
 
@@ -53,9 +53,9 @@
 `manifest.json`의 버전을 올리고 변경 사항을 테스트한 뒤 커밋한다. 버전과 일치하는 태그를 생성해 푸시하면 GitHub Actions가 테스트와 빌드 후 설치용 ZIP을 포함한 GitHub Release를 생성한다.
 
 ```bash
-git tag v0.1.10
+git tag v0.1.12
 git push origin main
-git push origin v0.1.10
+git push origin v0.1.12
 ```
 
-위 명령은 예시이며 태그를 만들기 전에 `manifest.json`의 버전도 `0.1.10`으로 변경해야 한다. 배포 상태는 저장소의 Actions와 Releases에서 확인한다.
+위 명령은 예시이며 태그를 만들기 전에 `manifest.json`의 버전도 `0.1.12`로 변경해야 한다. 배포 상태는 저장소의 Actions와 Releases에서 확인한다.

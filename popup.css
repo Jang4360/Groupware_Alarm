@@ -1,9 +1,11 @@
+@font-face{font-family:'Pretendard';src:url('assets/fonts/PretendardVariable.woff2') format('woff2');font-weight:45 920;font-style:normal;font-display:swap}
 *{box-sizing:border-box}
-body{margin:0;background:#f5f7fb;color:#172238;font:14px system-ui,'Malgun Gothic',sans-serif;width:340px}
+html{width:340px;background:transparent;border-radius:20px;overflow:hidden}
+body{margin:0;width:340px;background:#f5f7fb;border:1px solid #dfe7f3;border-radius:20px;overflow:hidden;color:#172238;font:14px 'Pretendard',system-ui,sans-serif}
 main{padding:22px}
 .eyebrow{color:#64748b;font-size:10px;letter-spacing:.14em;font-weight:700}
 .title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:5px 0 20px}
-h1{font-size:22px;letter-spacing:-.04em;margin:0}
+h1{font-size:14px;letter-spacing:-.04em;margin:0}
 .connection{display:flex;align-items:center;gap:6px;color:#5d6e83;font-size:12px;font-weight:600;white-space:nowrap}
 .dot{width:8px;height:8px;border-radius:50%;background:#94a3b8;flex:none}.dot.ok{background:#22a66f}.dot.login,.dot.error{background:#e45151}.dot.uncertain{background:#ef8d32}
 button{font:inherit;border:0;background:#245fe6;color:white;font-weight:700;border-radius:8px;padding:10px 13px;cursor:pointer}button:disabled{opacity:.5;cursor:wait}button:focus-visible,.history:focus-visible{outline:2px solid #245fe6;outline-offset:2px}
