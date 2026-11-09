@@ -1,7 +1,7 @@
 @font-face{font-family:'Pretendard';src:url('assets/fonts/PretendardVariable.woff2') format('woff2');font-weight:45 920;font-style:normal;font-display:swap}
 *{box-sizing:border-box}
-html{width:340px;background:transparent;border-radius:20px;overflow:hidden}
-body{margin:0;width:340px;background:#f5f7fb;border:1px solid #dfe7f3;border-radius:20px;overflow:hidden;color:#172238;font:14px 'Pretendard',system-ui,sans-serif}
+html{width:340px;background:#f5f7fb}
+body{margin:0;width:340px;background:#f5f7fb;color:#172238;font:14px 'Pretendard',system-ui,sans-serif}
 main{padding:22px}
 .eyebrow{color:#64748b;font-size:10px;letter-spacing:.14em;font-weight:700}
 .title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:5px 0 20px}
